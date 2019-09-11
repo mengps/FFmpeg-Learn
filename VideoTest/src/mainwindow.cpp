@@ -58,11 +58,9 @@ QImage VideoDecoder::currentFrame()
 {
     qDebug() << "[Free :" << freeSpace.available() << "] -- [Useable " << useableSpace.available() << "]";
     static QImage image = QImage();
-    if (!m_frameQueue.isEmpty()) {
-        useableSpace.acquire();
-        image = m_frameQueue.dequeue();
-        QSemaphoreReleaser releaser(freeSpace);
-    }
+    useableSpace.acquire();
+    image = m_frameQueue.dequeue();
+    QSemaphoreReleaser releaser(freeSpace);
 
     return image;
 }
