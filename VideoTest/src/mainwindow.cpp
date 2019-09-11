@@ -25,14 +25,6 @@ static const int maxQueueSize = 100;
 static QSemaphore freeSpace(maxQueueSize);
 static QSemaphore useableSpace(0);
 
-static void semaphoreInit()
-{
-    if (useableSpace.available() > 0)
-        useableSpace.acquire(useableSpace.available());
-    if (freeSpace.available() < maxQueueSize)
-        freeSpace.release(maxQueueSize - freeSpace.available());
-}
-
 VideoDecoder::VideoDecoder(QObject *parent)
     : QThread (parent)
 {
@@ -41,26 +33,23 @@ VideoDecoder::VideoDecoder(QObject *parent)
 
 VideoDecoder::~VideoDecoder()
 {
-    stop();
     wait();
 }
 
 void VideoDecoder::stop()
 {
-    QMutexLocker locker(&m_mutex);
     //必须先重置信号量
     semaphoreInit();
-    m_frameQueue.clear();
     m_runnable = false;
 }
 
 void VideoDecoder::open(const QString &filename)
 {
-    QMutexLocker locker(&m_mutex);
     semaphoreInit();
-    m_frameQueue.clear();
+    m_mutex.lock();
     m_filename = filename;
     m_runnable = true;
+    m_mutex.unlock();
     start();
 }
 
@@ -80,6 +69,13 @@ QImage VideoDecoder::currentFrame()
 void VideoDecoder::run()
 {
     demuxing_decoding();
+}
+
+void VideoDecoder::semaphoreInit()
+{
+    useableSpace.acquire(useableSpace.available());
+    m_frameQueue.clear();
+    freeSpace.release(maxQueueSize - freeSpace.available());
 }
 
 void VideoDecoder::demuxing_decoding()
@@ -211,7 +207,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-
+    m_decoder->stop();
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)

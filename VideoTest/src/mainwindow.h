@@ -30,6 +30,7 @@ protected:
     void run();
 
 private:
+    void semaphoreInit();
     void demuxing_decoding();
 
     bool m_runnable = true;
