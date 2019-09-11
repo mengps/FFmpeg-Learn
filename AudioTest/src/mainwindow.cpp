@@ -28,12 +28,6 @@ static const int maxQueueSize = 100;
 static QSemaphore freeSpace(maxQueueSize);
 static QSemaphore useableSpace(0);
 
-static void semaphoreInit()
-{
-    useableSpace.acquire(useableSpace.available());
-    freeSpace.release(maxQueueSize - freeSpace.available());
-}
-
 AudioDecoder::AudioDecoder(QObject *parent)
     : QThread (parent)
 {
@@ -42,25 +36,24 @@ AudioDecoder::AudioDecoder(QObject *parent)
 
 AudioDecoder::~AudioDecoder()
 {
-
+    stop();
+    wait();
 }
 
 void AudioDecoder::stop()
 {
-    QMutexLocker locker(&m_mutex);
     //必须先重置信号量
     semaphoreInit();
-    m_frameQueue.clear();
     m_runnable = false;
 }
 
 void AudioDecoder::open(const QString &filename)
 {
-    QMutexLocker locker(&m_mutex);
     semaphoreInit();
-    m_frameQueue.clear();
+    m_mutex.lock();
     m_filename = filename;
     m_runnable = true;
+    m_mutex.unlock();
     start();
 }
 
@@ -85,6 +78,13 @@ QByteArray AudioDecoder::currentFrame()
 void AudioDecoder::run()
 {
     demuxing_decoding();
+}
+
+void AudioDecoder::semaphoreInit()
+{
+    useableSpace.acquire(useableSpace.available());
+    m_frameQueue.clear();
+    freeSpace.release(maxQueueSize - freeSpace.available());
 }
 
 void AudioDecoder::demuxing_decoding()

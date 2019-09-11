@@ -36,6 +36,7 @@ protected:
     void run();
 
 private:
+    void semaphoreInit();
     void demuxing_decoding();
 
     qreal m_duration = 0.0;
