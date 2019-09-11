@@ -13,12 +13,17 @@ FFmpeg学习记录，用法记录，小例子
 
  - VideoTest
 
-```sh
-   FFmpeg解码视频测试
+```
+   FFmpeg视频解码测试
+```
+ - AudioTest
+
+```
+   FFmpeg音频解码测试
 ```
 ------
 
-使用Qt/Qml
+使用Qt / Qt Quick
 
 开发环境windows 10，Qt 5.13.0
 
