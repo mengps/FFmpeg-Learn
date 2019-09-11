@@ -33,6 +33,7 @@ VideoDecoder::VideoDecoder(QObject *parent)
 
 VideoDecoder::~VideoDecoder()
 {
+    stop();
     wait();
 }
 
