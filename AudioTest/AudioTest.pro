@@ -11,7 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = AudioTest
 TEMPLATE = app
 
-INCLUDEPATH += $$PWD/../ffmpeg/include
+INCLUDEPATH += $$PWD/../ffmpeg/include \
+        $$PWD/../Utility
 
 LIBS += -L$$PWD/../ffmpeg/lib/ -lavcodec -lavformat -lavutil -lswresample
 

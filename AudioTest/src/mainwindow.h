@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "bufferqueue.h"
+
 #include <QAudioFormat>
 #include <QMainWindow>
 #include <QMutex>
@@ -36,7 +38,6 @@ protected:
     void run();
 
 private:
-    void semaphoreInit();
     void demuxing_decoding();
 
     qreal m_duration = 0.0;
@@ -45,7 +46,7 @@ private:
     QAudioFormat m_format;
     QMutex m_mutex;
     QString m_filename;
-    QQueue<Packet> m_frameQueue;
+    BufferQueue<Packet> m_frameQueue;
 };
 
 class QSlider;

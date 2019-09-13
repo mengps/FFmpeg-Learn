@@ -16,17 +16,10 @@ extern "C"
 #include <QMimeData>
 #include <QPushButton>
 #include <QPainter>
-#include <QSemaphore>
 #include <QScreen>
 #include <QSlider>
 #include <QTimer>
 #include <QDebug>
-
-//         -1               +1
-//   [free space] -> [useable space]
-static const int maxQueueSize = 100;
-static QSemaphore freeSpace(maxQueueSize);
-static QSemaphore useableSpace(0);
 
 AudioDecoder::AudioDecoder(QObject *parent)
     : QThread (parent)
@@ -37,23 +30,26 @@ AudioDecoder::AudioDecoder(QObject *parent)
 AudioDecoder::~AudioDecoder()
 {
     stop();
-    wait();
 }
 
 void AudioDecoder::stop()
 {
     //必须先重置信号量
-    semaphoreInit();
+    m_frameQueue.init();
+    QMutexLocker locker(&m_mutex);
     m_runnable = false;
+    wait();
 }
 
 void AudioDecoder::open(const QString &filename)
 {
-    semaphoreInit();
+    stop();
+
     m_mutex.lock();
     m_filename = filename;
     m_runnable = true;
     m_mutex.unlock();
+
     start();
 }
 
@@ -66,9 +62,7 @@ QAudioFormat AudioDecoder::format()
 QByteArray AudioDecoder::currentFrame()
 {
     QByteArray data = QByteArray();
-    useableSpace.acquire();
     Packet packet = m_frameQueue.dequeue();
-    freeSpace.release();
     data += packet.data;
     if (packet.time >= m_duration) emit finish();
 
@@ -78,13 +72,6 @@ QByteArray AudioDecoder::currentFrame()
 void AudioDecoder::run()
 {
     demuxing_decoding();
-}
-
-void AudioDecoder::semaphoreInit()
-{
-    useableSpace.acquire(useableSpace.available());
-    m_frameQueue.clear();
-    freeSpace.release(maxQueueSize - freeSpace.available());
 }
 
 void AudioDecoder::demuxing_decoding()
@@ -167,9 +154,7 @@ void AudioDecoder::demuxing_decoding()
                 qreal time = frame->pts * av_q2d(audioStream->time_base) + frame->pkt_duration * av_q2d(audioStream->time_base);
                 m_currentTime = time;
 
-                freeSpace.acquire();
                 m_frameQueue.enqueue({ data, time });
-                QSemaphoreReleaser releaser(useableSpace);
 
                 av_frame_unref(frame);
             }
