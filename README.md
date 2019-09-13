@@ -22,10 +22,16 @@ FFmpeg学习记录，用法记录，小例子
    FFmpeg音频解码测试
 ```
 ------
+### 关于Utility
 
-使用Qt / Qt Quick
-
-开发环境windows 10，Qt 5.13.0
+ - SpinLock
+```
+   使用c++11封装的自旋锁
+```
+ - BufferQueue
+```
+   使用信号量实现的缓存沖队列(类似环形队列)
+```
 
 ------
 
