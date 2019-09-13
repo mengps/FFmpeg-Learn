@@ -14,16 +14,10 @@ extern "C"
 #include <QMimeData>
 #include <QPushButton>
 #include <QPainter>
-#include <QSemaphore>
 #include <QScreen>
 #include <QTimer>
 #include <QDebug>
 
-//         -1               +1
-//   [free space] -> [useable space]
-static const int maxQueueSize = 100;
-static QSemaphore freeSpace(maxQueueSize);
-static QSemaphore useableSpace(0);
 
 VideoDecoder::VideoDecoder(QObject *parent)
     : QThread (parent)
@@ -34,33 +28,33 @@ VideoDecoder::VideoDecoder(QObject *parent)
 VideoDecoder::~VideoDecoder()
 {
     stop();
-    wait();
 }
 
 void VideoDecoder::stop()
 {
     //必须先重置信号量
-    semaphoreInit();
+    m_frameQueue.init();
+    QMutexLocker locker(&m_mutex);
     m_runnable = false;
+    wait();
 }
 
 void VideoDecoder::open(const QString &filename)
 {
-    semaphoreInit();
+    stop();
+
     m_mutex.lock();
     m_filename = filename;
     m_runnable = true;
     m_mutex.unlock();
+
     start();
 }
 
 QImage VideoDecoder::currentFrame()
 {
-    qDebug() << "[Free :" << freeSpace.available() << "] -- [Useable " << useableSpace.available() << "]";
     static QImage image = QImage();
-    useableSpace.acquire();
     image = m_frameQueue.dequeue();
-    QSemaphoreReleaser releaser(freeSpace);
 
     return image;
 }
@@ -68,13 +62,6 @@ QImage VideoDecoder::currentFrame()
 void VideoDecoder::run()
 {
     demuxing_decoding();
-}
-
-void VideoDecoder::semaphoreInit()
-{
-    useableSpace.acquire(useableSpace.available());
-    m_frameQueue.clear();
-    freeSpace.release(maxQueueSize - freeSpace.available());
 }
 
 void VideoDecoder::demuxing_decoding()
@@ -146,9 +133,7 @@ void VideoDecoder::demuxing_decoding()
                 QImage image = QImage(dst_data[0], m_width, m_height, QImage::Format_RGB888).copy();
                 av_freep(&dst_data[0]);
 
-                freeSpace.acquire();
                 m_frameQueue.enqueue(image);
-                QSemaphoreReleaser releaser(useableSpace);
 
                 av_frame_unref(frame);
             }

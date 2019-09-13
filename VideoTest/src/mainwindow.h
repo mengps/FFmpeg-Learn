@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "bufferqueue.h"
+
 #include <QMainWindow>
 #include <QMutex>
 #include <QQueue>
@@ -30,13 +32,12 @@ protected:
     void run();
 
 private:
-    void semaphoreInit();
     void demuxing_decoding();
 
     bool m_runnable = true;
     QMutex m_mutex;
     QString m_filename;
-    QQueue<QImage> m_frameQueue;
+    BufferQueue<QImage> m_frameQueue;
     int m_fps, m_width, m_height;
 };
 
