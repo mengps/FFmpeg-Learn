@@ -29,7 +29,6 @@ public:
         qDebug() << "[freespace " << m_freeSpace->available()
                  << "] --- [useable " << m_useableSpace->available() << "]";
 #endif
-
         m_freeSpace->acquire();
         m_bufferQueue[m_front++ % m_bufferSize] = element;
         QSemaphoreReleaser releaser(m_useableSpace.get());
