@@ -222,10 +222,6 @@ void MainWindow::dropEvent(QDropEvent *event)
     const QMimeData *mimeData = event->mimeData();
     if(mimeData->hasUrls()) {
         QList<QUrl> urlList = mimeData->urls();
-        if (m_decoder->isRunning()) {
-            m_decoder->stop();
-            m_decoder->wait();
-        }
         m_decoder->open(urlList[0].toLocalFile());
     }
 }
