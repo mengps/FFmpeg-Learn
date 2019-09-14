@@ -62,7 +62,7 @@ QAudioFormat AudioDecoder::format()
 QByteArray AudioDecoder::currentFrame()
 {
     QByteArray data = QByteArray();
-    Packet packet = m_frameQueue.dequeue();
+    Packet packet = m_frameQueue.tryDequeue();
     data += packet.data;
     if (packet.time >= m_duration) emit finish();
 
