@@ -13,12 +13,12 @@ public:
 
     ~BufferQueue() {
         init();
-        QVector<T>().swap(m_bufferQueue);
+        std::vector<T>().swap(m_bufferQueue);
     }
 
     void setBufferSize(int bufferSize) {
         m_bufferSize = bufferSize;
-        m_bufferQueue = QVector<T>(bufferSize);
+        m_bufferQueue = std::vector<T>(bufferSize);
         m_useableSpace.reset(new QSemaphore(0));
         m_freeSpace.reset(new QSemaphore(m_bufferSize));
         m_front = m_rear = 0;
@@ -27,7 +27,7 @@ public:
     void enqueue(const T &element) {
 #ifndef QT_NO_DEBUG_OUTPUT
         qDebug() << "[freespace " << m_freeSpace->available()
-                 << "] --- [useable " << m_useableSpace->available() << "]";
+                 << "] --- [useablespace " << m_useableSpace->available() << "]";
 #endif
         m_freeSpace->acquire();
         m_bufferQueue[m_front++ % m_bufferSize] = element;
@@ -37,11 +37,27 @@ public:
     T dequeue() {
 #ifndef QT_NO_DEBUG_OUTPUT
         qDebug() << "[freespace " << m_freeSpace->available()
-                 << "] --- [useable " << m_useableSpace->available() << "]";
+                 << "] --- [useablespace " << m_useableSpace->available() << "]";
 #endif
         m_useableSpace->acquire();
         T element = m_bufferQueue[m_rear++ % m_bufferSize];
         m_freeSpace->release();
+
+        return element;
+    }
+
+    /**
+     * @brief tryDequeue
+     * @note 尝试获取一个元素，并且在失败时不会阻塞调用线程
+     * @return 成功返回对应T元素，失败返回默认构造的T元素
+     */
+    T tryDequeue() {
+        T element;
+        bool success = m_useableSpace->tryAcquire();
+        if (success) {
+            element = m_bufferQueue[m_rear++ % m_bufferSize];
+            m_freeSpace->release();
+        }
 
         return element;
     }
@@ -60,11 +76,8 @@ private:
     QScopedPointer<QSemaphore> m_useableSpace;
     std::atomic_int m_rear{0};
     std::atomic_int m_front{0};
-    QVector<T> m_bufferQueue;
+    std::vector<T> m_bufferQueue;
     int m_bufferSize;
-
-    //我讨厌warning
-    char paddingByte[4];
 };
 
 #endif
