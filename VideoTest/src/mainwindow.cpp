@@ -54,7 +54,7 @@ void VideoDecoder::open(const QString &filename)
 QImage VideoDecoder::currentFrame()
 {
     static QImage image = QImage();
-    image = m_frameQueue.dequeue();
+    image = m_frameQueue.tryDequeue();
 
     return image;
 }
