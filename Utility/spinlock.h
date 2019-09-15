@@ -6,6 +6,9 @@
 class SpinLock
 {
 public:
+    SpinLock(const SpinLock &) = delete;
+    SpinLock& operator=(const SpinLock &) = delete;
+
     void lock() {
         while (isLocked());
     }
