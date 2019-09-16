@@ -115,7 +115,7 @@ void AudioDecoder::demuxing_decoding()
     format.setSampleSize(8 * av_get_bytes_per_sample(AV_SAMPLE_FMT_S32));
     format.setChannelCount(codecContext->channels);
     m_format = format;
-    //av_seek_frame(formatContext, audioIndex, 8 * audioStream->time_base.den, AVSEEK_FLAG_ANY);
+
     m_duration = audioStream->duration * av_q2d(audioStream->time_base);
 
     emit resolved();
@@ -245,8 +245,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    m_decoder->stop();
-    m_decoder->wait();
+
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
