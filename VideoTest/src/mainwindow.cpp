@@ -98,7 +98,7 @@ void VideoDecoder::demuxing_decoding()
     av_dump_format(formatContext, 0, "format", 0);
     fflush(stderr);
 
-    m_fps = videoStream->r_frame_rate.num;
+    m_fps = videoStream->r_frame_rate.num / videoStream->r_frame_rate.den;
     m_width = codecContext->width;
     m_height = codecContext->height;
 
@@ -191,7 +191,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    m_decoder->stop();
+
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
