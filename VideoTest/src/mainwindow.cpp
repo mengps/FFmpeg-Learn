@@ -18,7 +18,6 @@ extern "C"
 #include <QTimer>
 #include <QDebug>
 
-
 VideoDecoder::VideoDecoder(QObject *parent)
     : QThread (parent)
 {
@@ -34,7 +33,6 @@ void VideoDecoder::stop()
 {
     //必须先重置信号量
     m_frameQueue.init();
-    QMutexLocker locker(&m_mutex);
     m_runnable = false;
     wait();
 }
