@@ -76,10 +76,10 @@ public:
 private:
     //         -1               +1
     //   [free space] -> [useable space]
-    Semaphore m_freeSpace{0};
-    Semaphore m_useableSpace{100};
-    std::atomic_int m_rear{0};
-    std::atomic_int m_front{0};
+    Semaphore m_freeSpace;
+    Semaphore m_useableSpace;
+    std::atomic_int m_rear;
+    std::atomic_int m_front;
     std::vector<T> m_bufferQueue;
     int m_bufferSize;
 };
