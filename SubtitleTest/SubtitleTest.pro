@@ -1,15 +1,20 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2019-09-15T20:55:10
+# Project created by QtCreator 2019-09-03T12:14:21
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += gui multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = SubtitleTest
 TEMPLATE = app
+
+INCLUDEPATH += $$PWD/../ffmpeg/include \
+        $$PWD/../Utility
+
+LIBS += -L$$PWD/../ffmpeg/lib/ -lavcodec -lavformat -lavutil -lswscale
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -24,14 +29,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
-SOURCES += \
-        main.cpp \
-        mainwindow.cpp
-
 HEADERS += \
-        mainwindow.h
+        src/mainwindow.h
+
+SOURCES += \
+        src/main.cpp \
+        src/mainwindow.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+FORMS +=
