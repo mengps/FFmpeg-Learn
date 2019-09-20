@@ -86,7 +86,7 @@ void AudioDecoder::demuxing_decoding()
     avformat_open_input(&formatContext, m_filename.toStdString().c_str(), nullptr, nullptr);
     avformat_find_stream_info(formatContext, nullptr);
 
-    //找到视频流的索引
+    //找到音频流的索引
     audioIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
 
     if (audioIndex >= 0)
