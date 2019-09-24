@@ -77,26 +77,41 @@ void VideoDecoder::demuxing_decoding()
     //找到视频流的索引
     videoIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
-    if (videoIndex >= 0)
-        videoStream = formatContext->streams[videoIndex];
+    if (videoIndex < 0) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    videoStream = formatContext->streams[videoIndex];
 
-    if (videoStream)
-        videoDecoder = avcodec_find_decoder(videoStream->codecpar->codec_id);
+    if (!videoStream) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    videoDecoder = avcodec_find_decoder(videoStream->codecpar->codec_id);
 
-    if (videoDecoder)
-        codecContext = avcodec_alloc_context3(videoDecoder);
+    if (!videoDecoder) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    codecContext = avcodec_alloc_context3(videoDecoder);
 
-    if (codecContext)
-        avcodec_parameters_to_context(codecContext, videoStream->codecpar);
+    if (!codecContext) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    avcodec_parameters_to_context(codecContext, videoStream->codecpar);
 
-    if (codecContext)
-        avcodec_open2(codecContext, videoDecoder, nullptr);
+    if (!codecContext) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    avcodec_open2(codecContext, videoDecoder, nullptr);
 
     //打印相关信息
     av_dump_format(formatContext, 0, "format", 0);
     fflush(stderr);
 
-    m_fps = videoStream->r_frame_rate.num / videoStream->r_frame_rate.den;
+    m_fps = videoStream->avg_frame_rate.num / videoStream->avg_frame_rate.den;
     m_width = codecContext->width;
     m_height = codecContext->height;
 
