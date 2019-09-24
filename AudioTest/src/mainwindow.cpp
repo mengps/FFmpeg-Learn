@@ -89,20 +89,35 @@ void AudioDecoder::demuxing_decoding()
     //找到音频流的索引
     audioIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
 
-    if (audioIndex >= 0)
-        audioStream = formatContext->streams[audioIndex];
+    if (audioIndex < 0) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    audioStream = formatContext->streams[audioIndex];
 
-    if (audioStream)
-        audioDecoder = avcodec_find_decoder(audioStream->codecpar->codec_id);
+    if (!audioStream) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    audioDecoder = avcodec_find_decoder(audioStream->codecpar->codec_id);
 
-    if (audioDecoder)
-        codecContext = avcodec_alloc_context3(audioDecoder);
+    if (!audioDecoder) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    codecContext = avcodec_alloc_context3(audioDecoder);
 
-    if (codecContext)
-        avcodec_parameters_to_context(codecContext, audioStream->codecpar);
+    if (!codecContext) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+   avcodec_parameters_to_context(codecContext, audioStream->codecpar);
 
-    if (codecContext)
-        avcodec_open2(codecContext, audioDecoder, nullptr);
+    if (!codecContext) {
+        qDebug() << "Has Error: line =" << __LINE__;
+        return;
+    }
+    avcodec_open2(codecContext, audioDecoder, nullptr);
 
     //打印相关信息
     av_dump_format(formatContext, 0, "format", 0);
