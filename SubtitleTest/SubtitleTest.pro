@@ -14,7 +14,7 @@ TEMPLATE = app
 INCLUDEPATH += $$PWD/../ffmpeg/include \
         $$PWD/../Utility
 
-LIBS += -L$$PWD/../ffmpeg/lib/ -lavcodec -lavformat -lavutil -lswscale
+LIBS += -L$$PWD/../ffmpeg/lib/ -lavcodec -lavformat -lavutil -lswscale -lavfilter
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
