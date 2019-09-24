@@ -54,11 +54,6 @@ void SubtitleDecoder::open(const QString &filename)
     start();
 }
 
-void SubtitleDecoder::setFilter(SubtitleDecoder::Filter filter)
-{
-
-}
-
 QImage SubtitleDecoder::currentFrame()
 {
     QImage image = m_frameQueue.tryDequeue();

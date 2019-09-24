@@ -16,10 +16,6 @@ class SubtitleDecoder : public QThread
     Q_OBJECT
 
 public:
-    enum Filter {
-
-    };
-
     SubtitleDecoder(QObject *parent = nullptr);
     ~SubtitleDecoder();
 
@@ -28,7 +24,6 @@ public:
     int width() const { return m_width; }
     int height() const { return m_height; }
     void open(const QString &filename);
-    void setFilter(Filter filter);
 
     QImage currentFrame();
 
