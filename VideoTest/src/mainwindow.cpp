@@ -137,7 +137,7 @@ void VideoDecoder::demuxing_decoding()
                 ret = avcodec_receive_frame(codecContext, frame);
 
                 if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
-                else if (ret < 0) return;
+                else if (ret < 0) goto Run_End;
 
                 int dst_linesize[4];
                 uint8_t *dst_data[4];
@@ -155,6 +155,7 @@ void VideoDecoder::demuxing_decoding()
         av_packet_unref(packet);
     }
 
+Run_End:
     m_fps = m_width = m_height = 0;
 
     if (frame) av_frame_free(&frame);
