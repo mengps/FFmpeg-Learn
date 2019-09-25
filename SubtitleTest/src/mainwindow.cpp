@@ -268,6 +268,7 @@ void SubtitleDecoder::demuxing_decoding_video()
                     SwsContext *swsContext = sws_getContext(m_width, m_height, codecContext->pix_fmt, m_width, m_height, AV_PIX_FMT_RGB24,
                                                             SWS_BILINEAR, nullptr, nullptr, nullptr);
                     sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, dst_data, dst_linesize);
+                    sws_freeContext(swsContext);
                     QImage image = QImage(dst_data[0], m_width, m_height, QImage::Format_RGB888).copy();
                     av_freep(&dst_data[0]);
 
@@ -319,6 +320,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
     m_decoder = new SubtitleDecoder(this);
     connect(m_decoder, &SubtitleDecoder::resolved, this, [this]() {
+        //限制大小900x600，并保持纵横比缩放
         qreal aspect = m_decoder->width() / qreal(m_decoder->height());
         int w = m_decoder->width(), h = m_decoder->height();
         if (w > 900) {
