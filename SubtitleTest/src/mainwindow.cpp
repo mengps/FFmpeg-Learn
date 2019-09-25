@@ -13,6 +13,7 @@ extern "C"
 }
 
 #include <QApplication>
+#include <QDir>
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QHBoxLayout>
@@ -67,7 +68,7 @@ void SubtitleDecoder::run()
 }
 
 bool SubtitleDecoder::init_subtitle_filter(AVFilterContext * &buffersrcContext, AVFilterContext * &buffersinkContext,
-                                  QString args, QString filterDesc)
+                                           QString args, QString filterDesc)
 {
     const AVFilter *buffersrc = avfilter_get_by_name("buffer");
     const AVFilter *buffersink = avfilter_get_by_name("buffersink");
@@ -191,19 +192,18 @@ void SubtitleDecoder::demuxing_decoding_video()
     AVFilterContext *buffersinkContext = nullptr;
 
     //字幕相关，使用subtitles，目前测试的是ass，但srt, ssa, ass, lrc都行，改后缀名即可
-    int suffixLength = QFileInfo(m_filename).suffix().length();
     bool subtitleOpened = false;
+    int suffixLength = QFileInfo(m_filename).suffix().length();
     QString subtitleFilename = m_filename.mid(0, m_filename.length() - suffixLength - 1) + ".ass";
 
-    //判断视频文件目录是否存在ass格式字幕，存在则拷贝到当前目录
-    //因为ffmpeg subtiltes filter不支持路径
     if (QFile::exists(subtitleFilename)) {
-        //拷贝到当前目录(exe路径)
-        QString completeBaseName = QFileInfo(m_filename).completeBaseName() + ".ass";
-        QFile::copy(subtitleFilename, "./" + completeBaseName);
-
         //初始化subtitle filter
-        QString filterDesc = QString("subtitles=filename='%1':original_size=%2x%3").arg(completeBaseName).arg(m_width).arg(m_height);
+        //绝对路径必须转成D\:\\xxx\\test.ass这种形式, 记住，是[D\:\\]这种形式
+        //toNativeSeparator()无用，因为QString->c_str()会将\\转成\，又给转回去了，巨坑
+        subtitleFilename.replace('/', "\\\\");
+        subtitleFilename.insert(subtitleFilename.indexOf(":\\"), char('\\'));
+        QString filterDesc = QString("subtitles=filename='%1':original_size=%2x%3").arg(subtitleFilename).arg(m_width).arg(m_height);
+        qDebug() << "Filter Description: " << filterDesc.toStdString().c_str();
         subtitleOpened = init_subtitle_filter(buffersrcContext, buffersinkContext, args, filterDesc);
         if (!subtitleOpened) {
             qDebug() << "字幕打开失败!";
@@ -319,8 +319,15 @@ MainWindow::MainWindow(QWidget *parent)
     });
     m_decoder = new SubtitleDecoder(this);
     connect(m_decoder, &SubtitleDecoder::resolved, this, [this]() {
-        int w = m_decoder->width() > 900 ? 900 : m_decoder->width();
-        int h = m_decoder->height() > 600 ? 600 : m_decoder->height();
+        qreal aspect = m_decoder->width() / qreal(m_decoder->height());
+        int w = m_decoder->width(), h = m_decoder->height();
+        if (w > 900) {
+            w = 900;
+            h = int(900.0 / aspect);
+        } else if (h > 600) {
+            h = 600;
+            w = int(600.0 * aspect);
+        }
         QSize size = (qApp->primaryScreen()->size() - QSize(w, h)) / 2;
         setGeometry(pos().x(), size.height(), w, h);
         m_timer->start(1000 / m_decoder->fps());
