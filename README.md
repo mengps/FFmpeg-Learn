@@ -25,11 +25,16 @@ FFmpeg学习记录，用法记录，小例子
  - SubtitleTest
 
 ```
-   FFmpeg字幕解码测试
+   FFmpeg字幕解码测试，只支持外挂字幕
 
    使用FFmpeg Subtitle Filter，依赖于libass
 
    如果使用的是ffmpeg文件夹中的(version 4.2)，则无需额外编译
+```
+ - SubtitleTest2
+
+```
+   FFmpeg字幕解码测试升级版，支持外挂字幕，内嵌字幕
 ```
 ------
 ### 关于Utility
