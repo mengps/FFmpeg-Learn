@@ -199,7 +199,7 @@ void SubtitleDecoder::demuxing_decoding_video()
     if (QFile::exists(subtitleFilename)) {
         //初始化subtitle filter
         //绝对路径必须转成D\:\\xxx\\test.ass这种形式, 记住，是[D\:\\]这种形式
-        //toNativeSeparator()无用，因为QString->c_str()会将\\转成\，又给转回去了，巨坑
+        //toNativeSeparator()无用，因为只是 / -> \ 的转换
         subtitleFilename.replace('/', "\\\\");
         subtitleFilename.insert(subtitleFilename.indexOf(":\\"), char('\\'));
         QString filterDesc = QString("subtitles=filename='%1':original_size=%2x%3").arg(subtitleFilename).arg(m_width).arg(m_height);
@@ -260,7 +260,7 @@ void SubtitleDecoder::demuxing_decoding_video()
                 } else {
                     //未找到字幕，直接输出图像
                     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
-                    else if (ret < 0) return;
+                    else if (ret < 0) goto Run_End;
 
                     int dst_linesize[4];
                     uint8_t *dst_data[4];
