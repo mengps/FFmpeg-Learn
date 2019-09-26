@@ -5,7 +5,6 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/imgutils.h>
-#include <libavutil/opt.h>
 #include <libswscale/swscale.h>
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersrc.h>
@@ -37,6 +36,12 @@ extern "C"
 #endif
 
 typedef const char * const_int8_ptr;
+
+struct SubtitleFrame {
+    QImage image;
+    int64_t pts;
+    int64_t duration;
+};
 
 SubtitleDecoder::SubtitleDecoder(QObject *parent)
     : QThread (parent)
@@ -188,6 +193,16 @@ QImage SubtitleDecoder::convert_image(AVFrame *frame)
     return image;
 }
 
+QImage SubtitleDecoder::overlay_subtitle(const QImage &video, const QImage &subtitle)
+{
+    QImage result = video;
+    QPainter painter(&result);
+    QPoint startPos((video.width() - subtitle.width()) / 2, video.height() - subtitle.height() - 20);
+    painter.drawImage(startPos, subtitle);
+
+    return result;
+}
+
 void SubtitleDecoder::demuxing_decoding_video()
 {
     AVFormatContext *formatContext = nullptr;
@@ -231,8 +246,8 @@ void SubtitleDecoder::demuxing_decoding_video()
     //初始化filter相关
     AVRational time_base = videoStream->time_base;
     QString args = QString::asprintf("video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-                                    m_width, m_height, videoCodecContext->pix_fmt, time_base.num, time_base.den,
-                                    videoCodecContext->sample_aspect_ratio.num, videoCodecContext->sample_aspect_ratio.den);
+                                     m_width, m_height, videoCodecContext->pix_fmt, time_base.num, time_base.den,
+                                     videoCodecContext->sample_aspect_ratio.num, videoCodecContext->sample_aspect_ratio.den);
     qDebug() << "Video Args: " << args;
 
     AVFilterContext *buffersrcContext = nullptr;
@@ -282,6 +297,8 @@ void SubtitleDecoder::demuxing_decoding_video()
     packet->data = nullptr;
     packet->size = 0;
 
+    SubtitleFrame subFrame;
+
     //读取下一帧
     while (m_runnable && av_read_frame(formatContext, packet) >= 0) {
         if (packet->stream_index == videoIndex) {
@@ -308,15 +325,22 @@ void SubtitleDecoder::demuxing_decoding_video()
                         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
                         else if (ret < 0) goto Run_End;
 
-                        m_frameQueue.enqueue(convert_image(filter_frame));
+                        QImage videoImage = convert_image(filter_frame);
+                        m_frameQueue.enqueue(videoImage);
+
                         av_frame_unref(filter_frame);
                     }
                 } else {
-                    //未找到字幕，直接输出图像
+                    //未打开字幕过滤器或无字幕
                     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
                     else if (ret < 0) goto Run_End;
 
-                    m_frameQueue.enqueue(convert_image(frame));
+                    QImage videoImage = convert_image(frame);
+                    //如果需要显示字幕，就将字幕覆盖上去
+                    if (frame->pts >= subFrame.pts && frame->pts <= (subFrame.pts + subFrame.duration)) {
+                        videoImage = overlay_subtitle(videoImage, subFrame.image);
+                    }
+                    m_frameQueue.enqueue(videoImage);
                 }
                 av_frame_unref(frame);
             }
@@ -333,7 +357,26 @@ void SubtitleDecoder::demuxing_decoding_video()
                 //实际上，只需要处理这种即可
                 if (subtitle.format == 0) {
                     for (size_t i = 0; i < subtitle.num_rects; i++) {
-                        //AVSubtitleRect *sub_rect = subtitle.rects[i];
+                        AVSubtitleRect *sub_rect = subtitle.rects[i];
+
+                        int dst_linesize[4];
+                        uint8_t *dst_data[4];
+                        //注意，这里是RGBA格式，需要Alpha
+                        av_image_alloc(dst_data, dst_linesize, sub_rect->w, sub_rect->h, AV_PIX_FMT_RGBA, 1);
+                        SwsContext *swsContext = sws_getContext(sub_rect->w, sub_rect->h, AV_PIX_FMT_PAL8,
+                                                                sub_rect->w, sub_rect->h, AV_PIX_FMT_RGBA,
+                                                                SWS_BILINEAR, nullptr, nullptr, nullptr);
+                        sws_scale(swsContext, sub_rect->data, sub_rect->linesize, 0, sub_rect->h, dst_data, dst_linesize);
+                        sws_freeContext(swsContext);
+                        //这里也使用RGBA
+                        QImage image = QImage(dst_data[0], sub_rect->w, sub_rect->h, QImage::Format_RGBA8888).copy();
+                        av_freep(&dst_data[0]);
+
+                        //subFrame存储当前的字幕
+                        //只有图像字幕才有start_display_time和start_display_time
+                        subFrame.pts = packet->pts;
+                        subFrame.duration = subtitle.end_display_time - subtitle.start_display_time;
+                        subFrame.image = image;
                     }
                 } else {
                     //如果是文本格式字幕:srt, ssa, ass, lrc

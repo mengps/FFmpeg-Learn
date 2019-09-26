@@ -3,7 +3,6 @@
 
 #include "bufferqueue.h"
 
-#include <QAudioFormat>
 #include <QMainWindow>
 #include <QMutex>
 #include <QQueue>
@@ -39,6 +38,7 @@ protected:
 
 private:
     QImage convert_image(AVFrame *frame);
+    QImage overlay_subtitle(const QImage &video, const QImage &subtitle);
 
     bool init_subtitle_filter(AVFilterContext *&buffersrc, AVFilterContext *&buffersink,
                               QString args, QString filterDesc);
