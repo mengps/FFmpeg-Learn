@@ -398,6 +398,7 @@ Run_End:
     if (packet) av_packet_free(&packet);
     if (formatContext) avformat_close_input(&formatContext);
     if (videoCodecContext) avcodec_free_context(&videoCodecContext);
+    if (subCodecContext) avcodec_free_context(&subCodecContext);
 }
 
 MainWindow::MainWindow(QWidget *parent)

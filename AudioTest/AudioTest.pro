@@ -27,7 +27,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11
+CONFIG += c++11 debug_and_release
+
+CONFIG(debug, debug|release) {
+    DESTDIR = $$shell_path(./debug)
+} else {
+    DESTDIR = $$shell_path(./release)
+}
+
+win32 {
+    ffmpeg_dll = $$shell_path($$PWD/../ffmpeg/dll)
+    QMAKE_POST_LINK = \
+        copy $$ffmpeg_dll $$DESTDIR
+}
 
 HEADERS += \
         src/mainwindow.h
